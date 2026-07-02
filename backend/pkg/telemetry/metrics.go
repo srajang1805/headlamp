@@ -138,20 +138,19 @@ func (m *Metrics) RequestCounterMiddleware(next http.Handler) http.Handler {
 				attribute.Int("http.status_code", wrapper.statusCode),
 			}
 
-			if rec := recover(); rec != nil {
+			rec := recover()
+			if rec != nil {
 				wrapper.statusCode = http.StatusInternalServerError
 				attrs[2] = attribute.Int("http.status_code", http.StatusInternalServerError)
-
-				m.RequestCounter.Add(r.Context(), 1, metric.WithAttributes(attrs...))
-
-				m.ActiveRequestsGauge.Add(r.Context(), -1)
-
-				panic(rec)
 			}
 
 			m.RequestCounter.Add(r.Context(), 1, metric.WithAttributes(attrs...))
 
 			m.ActiveRequestsGauge.Add(r.Context(), -1)
+
+			if rec != nil {
+				panic(rec)
+			}
 		}()
 
 		next.ServeHTTP(wrapper, r)

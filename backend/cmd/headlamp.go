@@ -1395,6 +1395,7 @@ func StartHeadlampServer(config *HeadlampConfig) {
 
 	if config.StaticDir != "" {
 		if err := copyStaticFiles(config); err != nil {
+			logger.Log(logger.LevelError, nil, err, "copying static files")
 			return
 		}
 	}
@@ -1440,7 +1441,7 @@ func runServer(config *HeadlampConfig, cancel context.CancelFunc, handler http.H
 
 	if err != nil && err != http.ErrServerClosed {
 		logger.Log(logger.LevelError, nil, err, "Failed to start server")
-		HandleServerStartError(&err)
+		HandleServerStartError(err)
 	}
 }
 
@@ -1519,13 +1520,16 @@ func setupGracefulShutdown(server *http.Server, cancel context.CancelFunc, serve
 }
 
 // Handle common server startup errors.
-func HandleServerStartError(err *error) {
+func HandleServerStartError(err error) {
 	// Check if the reason server failed because the address is already in use
 	// this might be because backend process is already running
-	if errors.Is(*err, syscall.EADDRINUSE) {
+	if errors.Is(err, syscall.EADDRINUSE) {
 		// Exit with 98 (address in use) exit code
 		os.Exit(int(syscall.EADDRINUSE))
 	}
+
+	logger.Log(logger.LevelError, nil, err, "Failed to start server")
+	os.Exit(1)
 }
 
 // Returns the helm.Handler given the config and request. Writes http.NotFound if clusterName is not there.
