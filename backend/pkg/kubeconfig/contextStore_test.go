@@ -167,3 +167,35 @@ func TestAddContextWithHeadlampInfo(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, cache.ErrNotFound, err)
 }
+
+func TestContextStore_RemoveContextIdempotent(t *testing.T) {
+	store := kubeconfig.NewContextStore()
+
+	err := store.RemoveContext("nonexistent")
+	require.NoError(t, err, "RemoveContext should not error on non-existent key")
+}
+
+func TestContextStore_GetContextsEmpty(t *testing.T) {
+	store := kubeconfig.NewContextStore()
+
+	contexts, err := store.GetContexts()
+	require.NoError(t, err)
+	require.NotNil(t, contexts)
+	require.Empty(t, contexts)
+}
+
+func TestContextStore_UpdateTTL(t *testing.T) {
+	store := kubeconfig.NewContextStore()
+
+	ctx := &kubeconfig.Context{Name: "ttl-test"}
+	err := store.AddContextWithKeyAndTTL(ctx, "ttl-test", 1*time.Second)
+	require.NoError(t, err)
+
+	err = store.UpdateTTL("ttl-test", 60*time.Second)
+	require.NoError(t, err)
+
+	time.Sleep(2 * time.Second)
+
+	_, err = store.GetContext("ttl-test")
+	require.NoError(t, err, "context should not expire after TTL update")
+}
