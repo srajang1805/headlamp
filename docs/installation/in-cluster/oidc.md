@@ -10,7 +10,7 @@ Headlamp supports OIDC for cluster users to effortlessly log in using a "Sign in
 To use OIDC, Headlamp needs to know how to configure it, so you have to provide the following OIDC-related arguments to Headlamp from your OIDC provider:
 
 - the client ID: `-oidc-client-id` or env var `HEADLAMP_CONFIG_OIDC_CLIENT_ID`
-- the client secret: `-oidc-client-secret` or env var `HEADLAMP_CONFIG_OIDC_CLIENT_SECRET`
+- the client secret: `-oidc-client-secret` or env var `HEADLAMP_CONFIG_OIDC_CLIENT_SECRET` (not required when using PKCE, see [Public clients](#public-clients-pkce-without-a-client-secret) below)
 - the issuer URL: `-oidc-idp-issuer-url` or env var `HEADLAMP_CONFIG_OIDC_IDP_ISSUER_URL`
 - (optionally) the OpenId scopes: `-oidc-scopes` or env var `HEADLAMP_CONFIG_OIDC_SCOPES`
 
@@ -64,6 +64,22 @@ then add them all to the option:
 **Note:** Before Headlamp 0.3.0, a scope _groups_ was also included, as it's
 used by Dex and other services, but since it's not part of the default spec,
 it was removed in the mentioned version.
+
+### Public clients (PKCE without a client secret)
+
+If your OIDC provider issues public clients that have no client secret
+(e.g. single-page app clients), Headlamp can authenticate using
+[PKCE](https://oauth.net/2/pkce/) instead of a client secret.
+
+To use a public client:
+
+- Enable PKCE: `-oidc-use-pkce=true` or env var `HEADLAMP_CONFIG_OIDC_USE_PKCE`
+- Set `-oidc-client-id` to the public client's ID
+- Do not set `-oidc-client-secret` (leave it empty)
+
+When PKCE is enabled, Headlamp sends an S256 `code_challenge` with the
+authorization request and the matching `code_verifier` during the token
+exchange, so no client secret is required.
 
 ### Token Validation Overrides
 
